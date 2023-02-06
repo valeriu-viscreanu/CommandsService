@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: connsul-depl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: connsul
+  template:
+    metadata:
+      labels:
+        app: connsul
+    spec:
+      containers:
+        - name: connsul
+          image: connsul:3-management
+          ports:
+            - containerPort: 15672
+              name: connsul-mgmt-port
+            - containerPort: 5672
+              name: connsul-msg-port
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: connsul-clusterip-srv
+spec:
+  type: ClusterIP
+  selector:
+    app: connsul
+  ports:
+  - name: connsul-mgmt-port
+    protocol: TCP
+    port: 15672
+    targetPort: 15672
+  - name: connsul-msg-port
+    protocol: TCP
+    port: 5672
+    targetPort: 5672
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: connsul-loadbalancer
+spec:
+  type: LoadBalancer
+  selector:
+    app: connsul
+  ports:
+  - name: connsul-mgmt-port
+    protocol: TCP
+    port: 15672
+    targetPort: 15672
+  - name: connsul-msg-port
+    protocol: TCP
+    port: 5672
+    targetPort: 5672
