@@ -1,58 +1,58 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: connsul-depl
+  name: consul
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: connsul
+      app: consul
   template:
     metadata:
       labels:
-        app: connsul
+        app: consul
     spec:
       containers:
-        - name: connsul
-          image: connsul:3-management
+        - name: consul
+          image: consul:1.12
+          command:
+            - "consul"
+            - "agent"
+            - "-server"
+            - "-ui"
+            - "-node=server-1"
+            - "-bootstrap-expect=1"
+            - "-client=0.0.0.0"
           ports:
-            - containerPort: 15672
-              name: connsul-mgmt-port
-            - containerPort: 5672
-              name: connsul-msg-port
+            - name: http
+              containerPort: 8500
+              protocol: TCP
+            - name: server
+              containerPort: 8300
+              protocol: TCP
+            - name: rpc
+              containerPort: 8400
+              protocol: TCP
+            - name: serflan
+              containerPort: 8301
+              protocol: TCP
+            - name: serfwan
+              containerPort: 8305
+              protocol: TCP
+          securityContext:
+            runAsUser: 1000
+
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: connsul-clusterip-srv
+  name: consul
 spec:
-  type: ClusterIP
   selector:
-    app: connsul
+    app: consul
   ports:
-  - name: connsul-mgmt-port
-    protocol: TCP
-    port: 15672
-    targetPort: 15672
-  - name: connsul-msg-port
-    protocol: TCP
-    port: 5672
-    targetPort: 5672
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: connsul-loadbalancer
-spec:
-  type: LoadBalancer
-  selector:
-    app: connsul
-  ports:
-  - name: connsul-mgmt-port
-    protocol: TCP
-    port: 15672
-    targetPort: 15672
-  - name: connsul-msg-port
-    protocol: TCP
-    port: 5672
-    targetPort: 5672
+    - name: server
+      port: 8500
+      targetPort: 8500
+      nodePort: 30001
+  type: NodePort
