@@ -27,9 +27,17 @@ internal class ConsulServiceRegister : IHostedService, IConsulServiceRegister
             ID = commandCfg.ServiceId
 
         };
-
-        await client.Agent.ServiceDeregister(commandCfg.ServiceId, cancellationToken);
-        await client.Agent.ServiceRegister(agentServiceRegistration, cancellationToken);
+        try
+        {            
+            Console.WriteLine($"--> Starting to register {agentServiceRegistration.Address}");
+            await client.Agent.ServiceDeregister(commandCfg.ServiceId, cancellationToken);
+            var r = await client.Agent.ServiceRegister(agentServiceRegistration, cancellationToken);
+            Console.WriteLine($" Service registered status:{r.StatusCode}");
+        }
+        catch (System.Net.Http.HttpRequestException ex)
+        {
+            Console.WriteLine($"Connection err occured on consul: {ex}");
+        }
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
@@ -38,6 +46,11 @@ internal class ConsulServiceRegister : IHostedService, IConsulServiceRegister
         {
             await client.Agent.ServiceDeregister(commandCfg.ServiceId, cancellationToken);
         }
+
+        catch (System.Net.Http.HttpRequestException)
+        {
+        }
+
         catch (Exception ex)
         {
             System.Console.WriteLine("deregister error: " + ex);
